@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Capital Works Program Search Widget</title>
+
+    <!-- Bootstrap -->
+    <link href="bootstrap-3.2.0/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+    <!-- Select2 -->
+    <link href="select2-3.5.1/select2.css" rel="stylesheet"/>
+
+  </head>
+  <body>
+    <input type='hidden' id="e1" style="width:400px;margin:10px;font-size:18px;"/>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="bootstrap-3.2.0/js/bootstrap.min.js"></script>
+    <!-- Select2 -->
+    <script src="select2-3.5.1/select2.js"></script>
+    <script>
+      $(document).ready(function() {
+        $("#e1").select2({
+          placeholder: "Type in a road name",
+          minimumInputLength: 3,
+          query: function (query) {
+            var data = {results: []};
+            for (i = 0; i < road_name_arr.length; i++) {
+                if (road_name_arr[i]["text"].toLowerCase().indexOf(query.term.toLowerCase())>-1)
+                {
+                  data.results.push(road_name_arr[i]);
+                }
+            }
+            query.callback(data);
+          }
+        });
+
+        // Initially from the spreadsheet, but reworded for widget readability
+        var headersAll = ["Contract","Current Year / Quarter or Year","Project Type","Description","Rd Class","Segment ID","Rd Name","Locality","Point From Where Measure - ments in the Columns to the Right Have Been Taken","Chainage (Km)","To Chainage (Km) Loddon Bulletin","Proposed or Required Works Loddon Bulletin","Proposed Treatment Code","Cost Code","Ledger ","RH Length(Km) ","RH Width(m)","RH Height (m)","LH Length(Km) ","LH Width(m)","LH Height (m)","Budget","Expenditure","% Activity","Proposed Start","Proposed Finish","Proposed Total Days","Project Ledger Open", "Project Ledger Closed","Patrol Area","Photo","TOTAL DISTANCE","Comments","Additional Works Comments ","Match","No of Grades","Completed Length (Km)"];
+        // Corresponds to the yellow cells in the spreasheet
+        var headersToKeepIdx = [1,4,6,7,8,9,10,12];
+        var headersToLabelSearchBox = [6,7];
+        var lines = [], road_name_arr = [], road_name_obj = {};
+
+        function processData(allText) {
+            var allTextLines = allText.split(/\r\n|\n/);
+            for (var i=0; i<allTextLines.length; i++) {
+                var data = allTextLines[i].split(',');
+                if (data.length > 0) {
+                    var tarr = [{"id":i}];
+                    for (var j=0; j<headersToKeepIdx.length; j++) {
+                        tarr.push(headersAll[headersToKeepIdx[j]]+":"+data[headersToKeepIdx[j]]);
+                        // Building a dedup array of id/text to power select2 drop down
+                        var text_label = data[6]+" ("+data[7]+")";
+                        if (!road_name_obj[text_label])
+                        {
+                          road_name_arr.push({id:i,text:text_label});
+                          road_name_obj[text_label]=true;
+                        }
+                    }
+                    lines.push(tarr);
+                }
+            }
+            //alert(lines);
+        }
+
+        $.ajax({
+            type: "GET",
+            url: "data/WorksProgram.csv",
+            dataType: "text",
+            success: function(data) {
+              processData(data);
+            }
+         });
+
+      });
+    </script>
+  </body>
+</html>
