@@ -23,11 +23,18 @@
         font-weight:bold;
         text-decoration: none !important;
       }
+
+      .select2-arrow b {
+        width: 0%;
+        background: none !important;
+      }
     </style>
 
   </head>
   <body>
-    <input type='hidden' id="e1" style="width:400px;margin:10px;font-size:18px;"/>
+    <div class="text-center">
+      <input type='hidden' id="e1" style="width:400px;margin:10px 10px 50px 10px;font-size:18px;"/>
+    <div>
 
     <div id="t1" class="jsontotable"></div>
 
@@ -46,7 +53,8 @@
       $(document).ready(function() {
         $("#e1").select2({
           placeholder: "Type in a road name",
-          minimumInputLength: 3,
+          minimumInputLength: 1,
+          formatInputTooShort: "",
           query: function (query) {
             var data = {results: []};
 
@@ -77,6 +85,7 @@
             return results;
           }
         }).on('change',function(data){
+          $("#e1").select2("open");
           // Emptying the table tag
           $('#t1').empty();
 
@@ -102,7 +111,9 @@
           // Render the JSON as an HTML table
           $.jsontotable($.merge($.merge( [], [a]),jsonResultArr), { id: '#t1', header: true, className: 'table table-striped table-hover table-bordered' });
 
-        });
+        }).on('select2-close',function(){
+          $("#e1").select2("open");
+        }).select2("open");
 
         // Initially from the spreadsheet, but reworded for widget readability
         var headersAll = ["Contract","Current Year / Quarter or Year","Project Type","Description","Road Class","Segment ID","Road Name","Locality","Point From Where Measure","Chainage (Km)","To Chainage (Km) Loddon Bulletin","Proposed or Required Works Loddon Bulletin","Proposed Treatment Code","Cost Code","Ledger ","RH Length(Km) ","RH Width(m)","RH Height (m)","LH Length(Km) ","LH Width(m)","LH Height (m)","Budget","Expenditure","% Activity","Proposed Start","Proposed Finish","Proposed Total Days","Project Ledger Open", "Project Ledger Closed","Patrol Area","Photo","TOTAL DISTANCE","Comments","Additional Works Comments ","Match","No of Grades","Completed Length (Km)"];
