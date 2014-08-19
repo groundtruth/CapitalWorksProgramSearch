@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Capital Works Program Search Widget</title>
+    <title>Loddon Capital Works Program Search Widget</title>
 
     <!-- Bootstrap -->
     <link href="bootstrap-3.2.0/css/bootstrap.min.css" rel="stylesheet">
@@ -48,43 +48,112 @@
     <script src="jquery.jsontotable.min.js"></script>
 
     <script>
-      // Helper function
+      // Variables
 
+      // Globals
+      var urlCSVFile = "data/WorksProgram.csv";
+      var maxNbItemsInDropDown = 7;
+      var placeHolder = "Type in a road name";
+
+      // Initially from the spreadsheet, re-worded for column readability
+      var headersAll = ["Contract","Current Year / Quarter or Year","Project Type","Description","Road Class","Segment ID","Road Name","Locality","Point From Where Measure","Chainage (Km)","To Chainage (Km) Loddon Bulletin","Proposed or Required Works Loddon Bulletin","Proposed Treatment Code","Cost Code","Ledger ","RH Length(Km) ","RH Width(m)","RH Height (m)","LH Length(Km) ","LH Width(m)","LH Height (m)","Budget","Expenditure","% Activity","Proposed Start","Proposed Finish","Proposed Total Days","Project Ledger Open", "Project Ledger Closed","Patrol Area","Photo","TOTAL DISTANCE","Comments","Additional Works Comments ","Match","No of Grades","Completed Length (Km)"];
+
+      // Indices of yellow cells in the spreasheet
+      var headersToKeepIdx = [1,4,6,7,8,9,10,12];
+      var quarterIdx = 1;
+      var quarterLabels = [
+        "FY 2013-2014",
+        "1st July - 30th September 2014",
+        "1st October - 31st December 2014",
+        "1st January - 31st March 2015",
+        "1st April - 30th June 2015",
+        "FY 2014-2015",
+        "FY 2015-2016"
+      ];
+
+      // Work variables
+      var lines = [], road_name_arr = [], road_name_obj = {};
+
+
+      // Helper functions
+
+      // Ordering by position within the matched string, then by lexicographic order
+      function sortByMatchPosAndLexico(q, a, b) {
+          var idx_a = a["text"].toLowerCase().indexOf(q.toLowerCase());
+          var idx_b = b["text"].toLowerCase().indexOf(q.toLowerCase());
+          if (idx_a > idx_b)        {return 1;}
+          else if (idx_a < idx_b)   {return -1;}
+          else {
+            if (a["text"]>b["text"])        {return 1;}
+            else if (a["text"]<b["text"])   {return -1;}
+            else                            {return 0;}
+          }
+      };
+
+      // Presenting row content
+      function rowFormat(resultArray){
+        $.each(resultArray,function(i,v){
+          // Presentation of the quarter/year column
+          v[headersAll[quarterIdx]] = v[headersAll[quarterIdx]].replace(/ ?& ?/,"<br>").replace("14 15",'5').replace("15 16",'6').replace(/([0123456])/g,function(match){
+              return quarterLabels[parseInt(match)];
+            });
+          // Other column presentation go here
+        });
+
+        return resultArray;
+      };
+
+      // Processing the CSV file into support structures
+      function processDataInit(allText) {
+          var allTextLines = allText.split(/\r\n|\n/);
+          for (var i=0; i<allTextLines.length; i++) {
+              var data = allTextLines[i].split(',');
+              if (data.length > 0) {
+                  // Pushing all attributes to keep in an object
+                  var tarr = {}; 
+                  for (var j=0; j<headersToKeepIdx.length; j++) {
+                      tarr[headersAll[headersToKeepIdx[j]]] =  data[headersToKeepIdx[j]];
+                  }
+                  lines.push(tarr);
+
+                  // Building a dedup'd array of id/text to power select2 drop down
+                  var text_label = data[6]+" ("+data[7]+")";
+                  if (!road_name_obj[text_label])
+                  {
+                    road_name_arr.push({id:i,text:text_label});
+                    // The obj is a convenience structure to check easily if a road name has already been encountered
+                    road_name_obj[text_label]=[i];
+                  }
+                  else
+                  {
+                    // It also allows easy access to the IDs of the records having the same road name
+                    road_name_obj[text_label].push(i);
+                  }
+              }
+          }
+      }
+
+      // jQuery behaviours
       $(document).ready(function() {
+        // Drop down component (select2)
         $("#e1").select2({
-          placeholder: "Type in a road name",
+          placeholder: placeHolder,
           minimumInputLength: 1,
           formatInputTooShort: "",
           query: function (query) {
             var data = {results: []};
 
-            // Subset of array matching the search string
+            // Subset of array matching the search string (case insensitive)
             data.results = $.grep(road_name_arr, function( n, i ) {
               return ( road_name_arr[i]["text"].toLowerCase().indexOf(query.term.toLowerCase())>-1 );
-            });
+            }).sort(function(a,b){
+                return sortByMatchPosAndLexico(query.term,a,b);
+            }).slice(0,maxNbItemsInDropDown);
 
             query.callback(data);
-          },
-          sortResults: function(results, container, query) {
-            if (query.term) {
-              // Custom sorting function:
-              // 1) position of the search string
-              // 2) lexicographic order
-              return results.sort(function(a, b) {
-                var idx_a = a["text"].toLowerCase().indexOf(query.term.toLowerCase());
-                var idx_b = b["text"].toLowerCase().indexOf(query.term.toLowerCase());
-                if (idx_a > idx_b)        {return 1;}
-                else if (idx_a < idx_b)   {return -1;}
-                else {
-                  if (a["text"]>b["text"])        {return 1;}
-                  else if (a["text"]<b["text"])   {return -1;}
-                  else                            {return 0;}
-                }
-              });
-            }
-            return results;
           }
         }).on('change',function(data){
+          // Keep the select control open
           $("#e1").select2("open");
           // Emptying the table tag
           $('#t1').empty();
@@ -94,7 +163,7 @@
             return ( headersToKeepIdx.indexOf(i)>-1 );
           });
 
-          // Transforming into an proper object
+          // Transforming this column header structure into an proper object (suitable for JSON to HTML templating)
           var a = {};
           $.each(titleRow,function(idx,val){
             a[val]=val;
@@ -115,72 +184,13 @@
           $("#e1").select2("open");
         }).select2("open");
 
-        // Initially from the spreadsheet, but reworded for widget readability
-        var headersAll = ["Contract","Current Year / Quarter or Year","Project Type","Description","Road Class","Segment ID","Road Name","Locality","Point From Where Measure","Chainage (Km)","To Chainage (Km) Loddon Bulletin","Proposed or Required Works Loddon Bulletin","Proposed Treatment Code","Cost Code","Ledger ","RH Length(Km) ","RH Width(m)","RH Height (m)","LH Length(Km) ","LH Width(m)","LH Height (m)","Budget","Expenditure","% Activity","Proposed Start","Proposed Finish","Proposed Total Days","Project Ledger Open", "Project Ledger Closed","Patrol Area","Photo","TOTAL DISTANCE","Comments","Additional Works Comments ","Match","No of Grades","Completed Length (Km)"];
-        // Corresponds to the yellow cells in the spreasheet
-        var headersToKeepIdx = [1,4,6,7,8,9,10,12];
-        var headersToLabelSearchBox = [6,7];
-        var quarterIdx = 1;
-        var quarterLabels = [
-          "FY 2013-2014",
-          "1st July - 30th September 2014",
-          "1st October - 31st December 2014",
-          "1st January - 31st March 2015",
-          "1st April - 30th June 2015",
-          "FY 2014-2015",
-          "FY 2015-2016"
-        ];
-
-        // Function to present row content
-        var rowFormat = function(resultArray){
-          $.each(resultArray,function(i,v){
-            // Presentation of the quarter/year column
-            v[headersAll[quarterIdx]] = v[headersAll[quarterIdx]].replace(/ ?& ?/,"<br>").replace("14 15",'5').replace("15 16",'6').replace(/([0123456])/g,function(match){
-                return quarterLabels[parseInt(match)];
-              });
-          });
-
-          return resultArray;
-        };
-
-        var lines = [], road_name_arr = [], road_name_obj = {};
-
-        function processData(allText) {
-            var allTextLines = allText.split(/\r\n|\n/);
-            for (var i=0; i<allTextLines.length; i++) {
-                var data = allTextLines[i].split(',');
-                if (data.length > 0) {
-                    // Pushing all attributes to keep in an object
-                    var tarr = {}; 
-                    for (var j=0; j<headersToKeepIdx.length; j++) {
-                        tarr[headersAll[headersToKeepIdx[j]]] =  data[headersToKeepIdx[j]];
-                    }
-                    lines.push(tarr);
-
-                    // Building a dedup array of id/text to power select2 drop down
-                    var text_label = data[6]+" ("+data[7]+")";
-                    if (!road_name_obj[text_label])
-                    {
-                      road_name_arr.push({id:i,text:text_label});
-                      // The obj is a convenience structure to check easily if a road name has already been encountered
-                      road_name_obj[text_label]=[i];
-                    }
-                    else
-                    {
-                      // It also allows easy access to the IDs of the records having the same road name
-                      road_name_obj[text_label].push(i);
-                    }
-                }
-            }
-            //alert(lines);
-        }
-
+        // Requesting the CSV file containing the work programs
         $.ajax({
             type: "GET",
-            url: "data/WorksProgram.csv",
+            url: urlCSVFile,
             dataType: "text",
             success: function(data) {
-              processData(data);
+              processDataInit(data);
             }
          });
 
