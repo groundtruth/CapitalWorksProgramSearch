@@ -118,17 +118,20 @@
                   lines.push(tarr);
 
                   // Building a dedup'd array of id/text to power select2 drop down
-                  var text_label = data[6]+" ("+data[7]+")";
-                  if (!road_name_obj[text_label])
+                  var text_label = data[6];
+                  if (text_label)
                   {
-                    road_name_arr.push({id:i,text:text_label});
-                    // The obj is a convenience structure to check easily if a road name has already been encountered
-                    road_name_obj[text_label]=[i];
-                  }
-                  else
-                  {
-                    // It also allows easy access to the IDs of the records having the same road name
-                    road_name_obj[text_label].push(i);
+                    if (!road_name_obj[text_label])
+                    {
+                      road_name_arr.push({id:i,text:text_label});
+                      // The obj is a convenience structure to check easily if a road name has already been encountered
+                      road_name_obj[text_label]=[i];
+                    }
+                    else
+                    {
+                      // It also allows easy access to the IDs of the records having the same road name
+                      road_name_obj[text_label].push(i);
+                    }
                   }
               }
           }
