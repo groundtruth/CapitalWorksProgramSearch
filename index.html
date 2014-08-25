@@ -70,6 +70,7 @@
         "FY 2014-2015",
         "FY 2015-2016"
       ];
+      var chainageFromIdx = 9;
 
       // Work variables
       var lines = [], road_name_arr = [], road_name_obj = {};
@@ -101,7 +102,23 @@
           // Other column presentation go here
         });
 
-        return resultArray;
+        // Ordering results by chainage ascending
+        return resultArray.sort(function(a,b){
+          var chs_a = a[headersAll[chainageFromIdx]];
+          var chs_b = b[headersAll[chainageFromIdx]];
+          if (!isNaN(parseFloat(chs_a)) && !isNaN(parseFloat(chs_b)))
+          {
+            chs_a = parseFloat(chs_a);
+            chs_b = parseFloat(chs_b);
+            if (chs_a > chs_b)      {return 1;}
+            else if (chs_a < chs_b) {return -1;}
+            else                    {return 0;}
+          }
+          else
+          {
+            return 0;
+          }
+        });
       };
 
       // Processing the CSV file into support structures
