@@ -63,12 +63,12 @@
       var quarterIdx = 1;
       var quarterLabels = [
         "",
-        "1st July - 30th September 2014",
-        "1st October - 31st December 2014",
-        "1st January - 31st March 2015",
-        "1st April - 30th June 2015",
-        "FY 2014-2015",
-        "FY 2015-2016"
+        "1st July - 30th September 2015",
+        "1st October - 31st December 2015",
+        "1st January - 31st March 2016",
+        "1st April - 30th June 2016",
+        "FY 2015-2016",
+        "FY 2016-2017"
       ];
       var chainageFromIdx = 9;
 
@@ -96,7 +96,7 @@
       function rowFormat(resultArray){
         $.each(resultArray,function(i,v){
           // Presentation of the quarter/year column
-          v[headersAll[quarterIdx]] = v[headersAll[quarterIdx]].replace(/ ?& ?/,"<br>").replace("14 15",'5').replace("15 16",'6').replace(/([0123456])/g,function(match){
+          v[headersAll[quarterIdx]] = v[headersAll[quarterIdx]].replace(/ ?& ?/,"<br>").replace("15 16",'5').replace("16 17",'6').replace(/([0123456])/g,function(match){
               return quarterLabels[parseInt(match)];
             });
           // Other column presentation go here
